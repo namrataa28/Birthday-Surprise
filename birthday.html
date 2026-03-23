@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A Story for You 🌹</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --rose: #ff4d6d;
+            --soft-pink: #ffccd5;
+            --deep-red: #800f2f;
+            --glass: rgba(255, 255, 255, 0.15);
+            --text: #590d22;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body, html {
+            margin: 0; padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at center, #fff0f3 0%, #ffccd5 100%);
+            color: var(--text);
+            overflow: hidden;
+            width: 100%; height: 100%;
+        }
+
+        /* --- ANIMATED FLOATING BACKGROUND --- */
+        .bg-hearts {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+
+        .floating-heart {
+            position: absolute;
+            color: var(--rose);
+            opacity: 0.3;
+            animation: floatUp 6s linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* --- THE SLIDER (9 PAGES) --- */
+        .viewport { width: 100%; height: 100vh; overflow: hidden; position: relative; z-index: 1; }
+        .master-container {
+            display: flex; 
+            width: 900%; /* 9 Pages */
+            height: 100%;
+            transition: transform 1.2s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        .page {
+            width: 11.11%; /* 100 / 9 */
+            height: 100vh; padding: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center;
+        }
+
+        /* --- ENTRANCE ANIMATIONS --- */
+        .animate-in { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
+        .active .animate-in { opacity: 1; transform: translateY(0); }
+        .delay-1 { transition-delay: 0.3s; }
+        .delay-2 { transition-delay: 0.6s; }
+
+        /* --- GLASS CARDS --- */
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 25px;
+            padding: 25px;
+            margin: 10px 0;
+            width: 90%; max-width: 400px;
+            box-shadow: 0 10px 30px rgba(128, 15, 47, 0.1);
+        }
+
+        /* --- BUTTON HEARTBEAT --- */
+        .btn {
+            background: var(--rose); color: white; border: none;
+            padding: 15px 40px; border-radius: 50px; cursor: pointer;
+            font-weight: 600; font-size: 1rem;
+            box-shadow: 0 5px 15px rgba(255, 77, 109, 0.4);
+            animation: heartbeat 2s infinite;
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- BLOOM ANIMATION FOR LAST PAGE --- */
+        .bloom-text {
+            font-family: 'Dancing Script';
+            font-size: clamp(3rem, 10vw, 5rem);
+            color: #ff0054;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .active .bloom-text {
+            opacity: 1;
+            transform: scale(1.1);
+            text-shadow: 0 0 20px rgba(255, 77, 109, 0.6);
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1 { font-family: 'Dancing Script'; font-size: 4rem; color: var(--deep-red); margin: 0; }
+        nav {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px);
+            padding: 8px 15px; border-radius: 50px; display: flex; gap: 8px; z-index: 1000;
+            width: 90%; max-width: 600px; overflow-x: auto; scrollbar-width: none;
+        }
+        nav::-webkit-scrollbar { display: none; }
+        nav a { 
+            text-decoration: none; color: var(--text); font-size: 0.7rem; font-weight: 600;
+            padding: 8px 12px; border-radius: 20px; transition: 0.3s; cursor: pointer; white-space: nowrap;
+        }
+        nav a.active-link { background: var(--rose); color: white; }
+
+        /* --- PHOTO GRID --- */
+        .photo-slot {
+            width: 100%; aspect-ratio: 1/1; background: white; border-radius: 15px;
+            overflow: hidden; border: 3px solid white; transition: 0.5s;
+        }
+        .photo-slot img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+        .photo-slot:hover { transform: rotate(3deg) scale(1.1); }
+    </style>
+</head>
+<body>
+
+    <div class="bg-hearts" id="bgHearts"></div>
+
+    <nav id="navbar">
+        <a onclick="goToPage(0)" class="active-link">Intro</a>
+        <a onclick="goToPage(1)">Story</a>
+        <a onclick="goToPage(2)">Photos</a>
+        <a onclick="goToPage(3)">Why You?</a>
+        <a onclick="goToPage(4)">Note</a>
+        <a onclick="goToPage(5)">Future</a>
+        <a onclick="goToPage(6)">Songs</a>
+        <a onclick="goToPage(7)">Surprise</a>
+        <a onclick="goToPage(8)">Soulmate</a>
+    </nav>
+
+    <div class="viewport">
+        <div class="master-container" id="masterContainer">
+            
+            <section class="page active">
+                <h1 class="animate-in">Happy Birthday my Sweatheart.</h1>
+                <p class="animate-in delay-1">Every second of this was built to feel you little special.</p>
+                <button class="btn animate-in delay-2" onclick="goToPage(1)">Step Inside ♡</button>
+            </section>
+
+            <section class="page">
+                <h2 style="font-family: 'Playfair Display'; color: var(--deep-red);">Our Story!</h2>
+                <div class="card animate-in">It was just a small beginning❤️,
+a simple conversation on an ordinary day…sitting beside each other on normal days but slowly became something quietly special!</div>
+                <div class="card animate-in delay-1">It all happened because you chose me,
+because you cared about me,
+and put your heart into our friendship.
+
+And now, those little efforts mean everything to me.
+
+It’s not just our story anymore…
+it’s something I never want to lose,
+something I quietly wish lasts forever♾️.</div>
+                <!-- <div class="card animate-in delay-1">It’s not just our story anymore… it’s something I never want to lose, something I quietly wish lasts forever♾️.</div> -->
+            </section>
+
+            <section class="page">
+                <h2>Our Best Clicks</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 90%; max-width: 400px; margin-bottom: 15px;">
+                    <div class="photo-slot animate-in"><img src="WhatsApp Image 2026-03-23 at 10.49.06 AM.jpeg" alt="1"></div>
+                    <div class="photo-slot animate-in delay-1"><img src="WhatsApp Image 2026-03-23 at 10.49.28 AM.jpeg" alt="2"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 90%; max-width: 400px;">
+                    <div class="photo-slot animate-in"><img src="WhatsApp Image 2026-03-23 at 10.59.50 AM (1).jpeg" alt="3"></div>
+                    <div class="photo-slot animate-in delay-1"><img src="WhatsApp Image 2026-03-23 at 10.59.50 AM.jpeg" alt="4"></div>
+                </div>
+            </section>
+
+            <section class="page">
+                <h2>Why I Admire You</h2>
+                <div class="card animate-in">I don’t say it often… but I truly admire you🥹, more than you know, There are so many things about you that I quietly admire…
+not just the big ones, but the little things you don’t even realize.
+
+The way you care so naturally, without expecting anything back.
+The way you stay, even when it would be easier to walk away.
+
+I admire your smile,when i see you smile, it lights up my mood soo beatifully,
+how you make the hardest days feel a little brighter.
+I admire your strength, how you keep going,
+even in the moments you don’t feel strong.
+
+I admire how you make people feel comfortable,
+how your presence alone can make everything feel a little lighter.
+
+And maybe what I admire the most is…
+You and Your Love for me💞</div>
+            </section>
+
+            <section class="page">
+                <h2>My Letter</h2>
+                <div class="card animate-in" style="text-align: left; font-style: italic;">
+                    "Sometimes words aren't enough, so I coded this instead. Thank you for being my constant in this chaotic world..."
+                </div>
+            </section>
+
+            <section class="page">
+                <h2></h2>Your Future Plans! (that I truly want to see you achieve)
+                <div class="card animate-in">✈️ DisneyLand (most important trip ever!)</div>
+                <div class="card animate-in delay-1">🎓 IIM Ahmedabad</div>
+                <div class="card animate-in delay-2">❤️ The Love that you Deserve</div>
+            </section>
+
+            <section class="page">
+                <h2>The Song That Reminds Me of You💗</h2>
+                <div class="card animate-in">
+                    <p>The line that always hits me about this song is that "Kabhi Kabhi sochta hun tu na aata toh koi aata hi nhi".</p>
+                    <div style="height: 80px; background: rgba(255,255,255,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: center;">🎵 Dekha Hi Nahi (osho jain)</div>
+                </div>
+                <div class="card animate-in">
+                    <p>For once, Listen this song, Every line is dedicated to You💗</p>
+                </div>
+            </section>
+
+            <section class="page">
+                <h2 class="animate-in">Final Surprise</h2>
+                <div class="card animate-in delay-1">
+                    <p>Type "FOREVER" to unlock my final message to you.</p>
+                    <input type="password" id="code" placeholder="..." style="padding: 15px; width: 80%; border-radius: 50px; border: none; text-align: center;">
+                    <button class="btn" onclick="checkCode()" style="margin-top: 20px;">Send Surprise 💌</button>
+                </div>
+            </section>
+
+            <section class="page" style="background: radial-gradient(circle, #fff0f3 0%, #ffb3c1 100%);">
+                <div class="bloom-text">I Love You soo much ❤️</div>
+                <div class="card animate-in delay-1" style="background: rgba(255,255,255,0.4); border: none;">
+                    <p style="font-size: 1.1rem; font-style: italic;">
+                        In every version of my life, in every universe... it would always be you. Happy Birthday, Jigyasha💞(Soul Sister♾️)
+                    </p>
+                </div>
+                <div class="animate-in delay-2" style="font-size: 3rem; margin-top: 20px;">🌹✨</div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        // GENERATE BACKGROUND PARTICLES
+        const bg = document.getElementById('bgHearts');
+        for(let i=0; i<20; i++) {
+            const h = document.createElement('div');
+            h.className = 'floating-heart';
+            h.innerHTML = '❤';
+            h.style.left = Math.random() * 100 + 'vw';
+            h.style.animationDelay = Math.random() * 5 + 's';
+            h.style.fontSize = (10 + Math.random() * 20) + 'px';
+            bg.appendChild(h);
+        }
+
+        const container = document.getElementById('masterContainer');
+        const pages = document.querySelectorAll('.page');
+        const navLinks = document.querySelectorAll('nav a');
+
+        function goToPage(index) {
+            // Updated math for 9 pages (100 / 9 = 11.11)
+            container.style.transform = `translateX(-${index * 11.11}%)`;
+            
+            pages.forEach(p => p.classList.remove('active'));
+            pages[index].classList.add('active');
+
+            navLinks.forEach(l => l.classList.remove('active-link'));
+            navLinks[index].classList.add('active-link');
+
+            if(index === 7 || index === 8) {
+                confetti({ 
+                    particleCount: index === 8 ? 400 : 200, 
+                    spread: 100, 
+                    origin: { y: 0.6 } 
+                });
+            }
+        }
+
+        function checkCode() {
+            const val = document.getElementById('code').value.toUpperCase();
+            if(val === "FOREVER") {
+                confetti({ particleCount: 500, spread: 150 });
+                // Automatically slide to page 9 after a short delay
+                setTimeout(() => {
+                    goToPage(8);
+                }, 1500);
+            } else {
+                alert("Hint: It starts with F and lasts for eternity!");
+            }
+        }
+    </script>
+</body>
+</html>
